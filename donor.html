@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Donor System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .donor-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #dc3545;
+        }
+        .donor-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .donor-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .donor-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .donor-details p {
+            margin-bottom: 0.25rem;
+        }
+        .admin-only {
+            display: none;
+        }
+        .admin-login-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Login Button -->
+    <button class="btn btn-outline-primary admin-login-btn" data-bs-toggle="modal" data-bs-target="#adminLoginModal">
+        <i class="fas fa-user-shield me-2"></i>Admin Login
+    </button>
+
+    <!-- Admin Login Modal -->
+    <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Admin Login</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="adminLoginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Admin Name</label>
+                            <input type="text" class="form-control" id="adminName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Passcode</label>
+                            <input type="password" class="form-control" id="adminPasscode" required>
+                        </div>
+                        <div class="alert alert-danger d-none" id="loginError">
+                            Invalid credentials. Please try again.
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid py-4">
+        <h1 class="text-center mb-4 text-danger">Blood Donor Management System</h1>
+        <div id="adminControls" class="admin-only">
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <span>Admin Mode: <strong id="adminNameDisplay"></strong></span>
+                <button class="btn btn-sm btn-outline-danger" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </button>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-6 mx-auto">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Become a Blood Donor</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="thankYouMessage" class="text-center py-4 d-none">
+                            <div class="mb-3">
+                                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                            </div>
+                            <h3 class="text-success">Thank You!</h3>
+                            <p class="lead">Your registration as a blood donor is complete.</p>
+                            <p>We appreciate your willingness to save lives. You'll be contacted when there's a need for your blood type.</p>
+                            <button class="btn btn-danger mt-3" onclick="resetForm()">Register Another Donor</button>
+                        </div>
+                        <form id="donorForm" class="donor-form">
+                            <div class="mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-control" name="phone" required>
+                            </div>    
+                            <div class="mb-3">
+                                <label class="form-label">Blood Type</label>
+                                <select class="form-select" name="blood_type" required>
+                                    <option value="">Select Blood Type</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control" name="city" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger w-100">
+                                <i class="fas fa-save me-2"></i>Register Donor
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 admin-only" style="display: none;">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Registered Donors</h5>
+                        <span class="badge bg-light text-dark" id="donorCount">0 donors</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search donors...">
+                            <select class="form-select" id="bloodTypeFilter">
+                                <option value="">All Blood Types</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="donor-list" id="donorsList">
+                                                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const ADMIN_CREDENTIALS = {
+            username: 'swathi',
+            passcode: '1234567'
+        };
+        
+        let isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
+        
+        const donorForm = document.getElementById('donorForm');
+        const donorsList = document.getElementById('donorsList');
+        const donorCount = document.getElementById('donorCount');
+        const searchInput = document.getElementById('searchInput');
+        const bloodTypeFilter = document.getElementById('bloodTypeFilter');
+        const adminControls = document.getElementById('adminControls');
+        const adminNameDisplay = document.getElementById('adminNameDisplay');
+        const loginForm = document.getElementById('adminLoginForm');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        let donors = JSON.parse(localStorage.getItem('bloodDonors')) || [];
+        
+        function updateAdminUI() {
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                el.style.display = isAdmin ? 'block' : 'none';
+            });
+            
+            if (isAdmin) {
+                adminNameDisplay.textContent = localStorage.getItem('adminName') || 'Admin';
+                renderDonors(donors);
+            } else {
+                donorsList.innerHTML = '<div class="text-center py-4 text-muted">Please login as admin to view donor list</div>';
+                donorCount.textContent = '0 donors';
+            }
+        }
+        
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('adminName').value.trim();
+            const passcode = document.getElementById('adminPasscode').value;
+            
+            if (username === ADMIN_CREDENTIALS.username && passcode === ADMIN_CREDENTIALS.passcode) {
+                isAdmin = true;
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('adminName', username);
+             
+                const modal = bootstrap.Modal.getInstance(document.getElementById('adminLoginModal'));
+                modal.hide();
+                
+                e.target.reset();
+                updateAdminUI();
+            } else {
+                loginError.classList.remove('d-none');
+            }
+        }
+        
+        function handleLogout() {
+            isAdmin = false;
+            localStorage.removeItem('adminLoggedIn');
+            updateAdminUI();
+        }
+        function saveDonors() {
+            localStorage.setItem('bloodDonors', JSON.stringify(donors));
+            updateDonorCount();
+        }
+        function updateDonorCount() {
+            donorCount.textContent = `${donors.length} ${donors.length === 1 ? 'donor' : 'donors'}`;
+        }
+        function createDonorCard(donor, index) {
+            const card = document.createElement('div');
+            card.className = 'card mb-3 donor-card';
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="donor-details">
+                            <h5 class="card-title mb-1">${donor.name}</h5>
+                            <p class="text-muted mb-1"><i class="fas fa-envelope me-2"></i>${donor.email}</p>
+                            <p class="mb-1"><i class="fas fa-phone me-2"></i>${donor.phone}</p>
+                            <p class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>${donor.city}</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-danger donor-badge">${donor.blood_type}</span>
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${index}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+        function renderDonors(donorsToRender = donors) {
+            donorsList.innerHTML = '';
+            if (donorsToRender.length === 0) {
+                donorsList.innerHTML = '<div class="text-center py-4 text-muted">No donors found</div>';
+                return;
+            }
+            donorsToRender.forEach((donor, index) => {
+                const card = createDonorCard(donor, index);
+                donorsList.appendChild(card);
+            });
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-id'));
+                    if (confirm('Are you sure you want to delete this donor?')) {
+                        donors.splice(index, 1);
+                        saveDonors();
+                        renderDonors(filterDonors());
+                    }
+                });
+            });
+        }
+        function filterDonors() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedBloodType = bloodTypeFilter.value;
+            
+            return donors.filter(donor => {
+                const matchesSearch = 
+                    donor.name.toLowerCase().includes(searchTerm) ||
+                    donor.email.toLowerCase().includes(searchTerm) ||
+                    donor.phone.includes(searchTerm) || 
+                    donor.city.toLowerCase().includes(searchTerm);
+                
+                const matchesBloodType = selectedBloodType === '' || donor.blood_type === selectedBloodType;
+                
+                return matchesSearch && matchesBloodType;
+            });
+        }
+        // Function to reset the form and show registration form
+        function resetForm() {
+            document.getElementById('thankYouMessage').classList.add('d-none');
+            document.querySelector('.donor-form').classList.remove('d-none');
+            donorForm.reset();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        donorForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const donor = Object.fromEntries(formData);
+            donor.id = Date.now();
+            donors.unshift(donor);
+            saveDonors();
+            
+            // Hide form and show thank you message
+            this.classList.add('d-none');
+            document.getElementById('thankYouMessage').classList.remove('d-none');
+            
+            // Scroll to top for better visibility of the thank you message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        searchInput.addEventListener('input', () => renderDonors(filterDonors()));
+        bloodTypeFilter.addEventListener('change', () => renderDonors(filterDonors()));
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loginForm) loginForm.addEventListener('submit', handleAdminLogin);
+            if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+            
+            updateAdminUI();
+            updateDonorCount();
+            
+            if (isAdmin) {
+                renderDonors();
+            }
+        });
+        
+        const loginModal = document.getElementById('adminLoginModal');
+        if (loginModal) {
+            loginModal.addEventListener('hidden.bs.modal', function () {
+                loginError.classList.add('d-none');
+            });
+        }
+    </script>
+</body>
+</html>
